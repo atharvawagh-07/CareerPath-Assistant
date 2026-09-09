@@ -1,0 +1,305 @@
+// Prisma schema for CareerPath PostgreSQL Database
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model User {
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  passwordHash    String
+  role            Role           @default(STUDENT)
+  profileImage    String?
+  educationLevel  String?
+  institution     String?
+  interests       String[]       @default([])
+  careerGoals     String?
+  workEnvironment String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  quizAnswers         QuizAnswer[]
+  quizResults         QuizResult[]
+  recommendations     CareerRecommendation[]
+  roadmaps            Roadmap[]
+  savedCareers        SavedCareer[]
+  savedResources      SavedResource[]
+  userSkills          UserSkill[]
+  projectProgressList ProjectProgress[]
+  feedbackList        Feedback[]
+
+  @@index([email])
+}
+
+model Career {
+  id              String         @id @default(uuid())
+  title           String
+  slug            String         @unique
+  category        String
+  description     String
+  overview        String
+  responsibilities String[]      @default([])
+  education       String
+  difficulty      String         // Beginner, Intermediate, Advanced
+  demandLevel     String         // Moderate, High, Very High
+  futureGrowth    String
+  salaryMin       Int
+  salaryMax       Int
+  salaryCurrency  String         @default("USD")
+  skills          String[]       @default([])
+  tools           String[]       @default([])
+  industries      String[]       @default([])
+  pros            String[]       @default([])
+  cons            String[]       @default([])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  careerSkills        CareerSkill[]
+  recommendations     CareerRecommendation[]
+  roadmaps            Roadmap[]
+  savedByUsers        SavedCareer[]
+
+  @@index([slug])
+  @@index([category])
+}
+
+model Skill {
+  id             String        @id @default(uuid())
+  name           String        @unique
+  category       String        // Technical, Soft, Tool, Framework
+  difficulty     String        // Beginner, Intermediate, Advanced
+  description    String
+  relatedCareers String[]      @default([])
+
+  careerSkills   CareerSkill[]
+  userSkills     UserSkill[]
+
+  @@index([category])
+}
+
+model CareerSkill {
+  id        String   @id @default(uuid())
+  careerId  String
+  skillId   String
+
+  career    Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([careerId, skillId])
+  @@index([careerId])
+  @@index([skillId])
+}
+
+model QuizQuestion {
+  id        String       @id @default(uuid())
+  question  String
+  category  String       // Interests, Strengths, Problem-solving, Work style, Learning style, Environment, Goals, Career preferences
+  options   Json         // Array of { id: string, text: string, careerAffinities: Record<string, number>, traits: string[] }
+  weight    Float        @default(1.0)
+  active    Boolean      @default(true)
+  order     Int          @default(0)
+
+  answers   QuizAnswer[]
+
+  @@index([category])
+  @@index([active])
+}
+
+model QuizAnswer {
+  id         String       @id @default(uuid())
+  userId     String
+  questionId String
+  answer     String
+  score      Float        @default(1.0)
+  createdAt  DateTime     @default(now())
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([questionId])
+}
+
+model QuizResult {
+  id           String    @id @default(uuid())
+  userId       String
+  completedAt  DateTime  @default(now())
+  resultData   Json      // { interestScores, strengthScores, topCategories, traits }
+  topCareerId  String?
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CareerRecommendation {
+  id              String    @id @default(uuid())
+  userId          String
+  careerId        String
+  matchPercentage Float
+  reasons         String[]  @default([])
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  career          Career    @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, careerId])
+  @@index([userId])
+  @@index([careerId])
+}
+
+model Roadmap {
+  id        String        @id @default(uuid())
+  userId    String
+  careerId  String
+  title     String
+  progress  Float         @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  career    Career        @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  steps     RoadmapStep[]
+
+  @@index([userId])
+  @@index([careerId])
+}
+
+model RoadmapStep {
+  id             String   @id @default(uuid())
+  roadmapId      String
+  title          String
+  description    String
+  category       String
+  estimatedHours Int      @default(10)
+  order          Int
+  completed      Boolean  @default(false)
+  skills         String[] @default([])
+  resources      String[] @default([])
+  projects       String[] @default([])
+
+  roadmap        Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapId])
+}
+
+model Project {
+  id             String            @id @default(uuid())
+  title          String
+  slug           String            @unique
+  description    String
+  difficulty     String            // Beginner, Intermediate, Advanced
+  category       String
+  technologies   String[]          @default([])
+  skills         String[]          @default([])
+  portfolioValue String            // High, Very High, Medium
+  duration       String            @default("2-3 weeks")
+  deliverables   String[]          @default([])
+
+  progressList   ProjectProgress[]
+
+  @@index([slug])
+  @@index([category])
+}
+
+model Resource {
+  id          String          @id @default(uuid())
+  title       String
+  description String
+  category    String          // Courses, Certifications, Books, YouTube, Practice, Internships, Resume, Interview preparation
+  difficulty  String          // Beginner, Intermediate, Advanced
+  isFree      Boolean         @default(true)
+  url         String
+  provider    String
+
+  savedByUsers SavedResource[]
+
+  @@index([category])
+  @@index([isFree])
+}
+
+model SavedCareer {
+  id        String   @id @default(uuid())
+  userId    String
+  careerId  String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  career    Career   @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, careerId])
+  @@index([userId])
+  @@index([careerId])
+}
+
+model SavedResource {
+  id         String   @id @default(uuid())
+  userId     String
+  resourceId String
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, resourceId])
+  @@index([userId])
+  @@index([resourceId])
+}
+
+model UserSkill {
+  id          String   @id @default(uuid())
+  userId      String
+  skillId     String
+  proficiency String   @default("Beginner") // Beginner, Intermediate, Advanced
+  progress    Int      @default(0)          // 0 to 100
+  updatedAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill       Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+}
+
+model ProjectProgress {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String
+  status    String   @default("NOT_STARTED") // NOT_STARTED, IN_PROGRESS, COMPLETED
+  progress  Int      @default(0)              // 0 to 100
+  updatedAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@index([projectId])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String?
+  name      String
+  email     String
+  message   String
+  type      String   @default("GENERAL") // GENERAL, BUG, FEATURE_REQUEST, CAREER_SUGGESTION
+  status    String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}

@@ -1,0 +1,6 @@
+{
+  "name": "CareerPath",
+  "description": "An intelligent career-orientation platform designed for youth and college students to discover suitable paths, take assessments, build roadmaps, and track readiness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
