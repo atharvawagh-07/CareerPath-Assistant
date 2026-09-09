@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import {
   Compass,
   ArrowLeft,
@@ -26,15 +26,37 @@ import { useCurrency } from '../context/CurrencyContext';
 
 export const CareerDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { savedCareerIds, toggleCareerBookmark } = useAuth();
   const { isCareerComparing, addCareerToCompare, removeCareerFromCompare } = useCompare();
   const { currency, setCurrency, formatSalary, getSalaryBreakdown } = useCurrency();
 
+  const urlTab = searchParams.get('tab');
+  const validTabs = ['overview', 'skills', 'projects', 'resources'];
+  const initialTab = (urlTab && validTabs.includes(urlTab)) ? (urlTab as any) : 'overview';
+
   const [career, setCareer] = useState<Career | null>(null);
   const [loading, setLoading] = useState(true);
   const [generatingRoadmap, setGeneratingRoadmap] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'skills' | 'projects' | 'resources'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'skills' | 'projects' | 'resources'>(initialTab);
+
+  // Sync tab with URL
+  useEffect(() => {
+    const currentParam = searchParams.get('tab');
+    if (currentParam && validTabs.includes(currentParam) && currentParam !== activeTab) {
+      setActiveTab(currentParam as any);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId: 'overview' | 'skills' | 'projects' | 'resources') => {
+    setActiveTab(tabId);
+    if (tabId === 'overview') {
+      setSearchParams({}, { replace: true });
+    } else {
+      setSearchParams({ tab: tabId }, { replace: true });
+    }
+  };
 
   useEffect(() => {
     async function loadCareer() {
@@ -231,7 +253,7 @@ export const CareerDetailPage: React.FC = () => {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => handleTabChange(tab.id as any)}
             className={`border-b-2 py-3 px-4 text-xs font-bold transition whitespace-nowrap ${
               activeTab === tab.id
                 ? 'border-blue-600 text-blue-600'

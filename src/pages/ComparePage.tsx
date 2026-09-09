@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   GitCompare,
   X,
@@ -9,7 +9,9 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
-  Bookmark
+  Bookmark,
+  Share2,
+  Check
 } from 'lucide-react';
 import { Career } from '../types';
 import { api } from '../services/api';
@@ -18,24 +20,55 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 
 export const ComparePage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { selectedCareers, removeCareerFromCompare, clearCompare, addCareerToCompare } = useCompare();
   const { savedCareerIds, toggleCareerBookmark } = useAuth();
   const { currency, setCurrency, formatSalary } = useCurrency();
 
   const [allCareers, setAllCareers] = useState<Career[]>([]);
   const [selectedToAdd, setSelectedToAdd] = useState<string>('');
+  const [copiedLink, setCopiedLink] = useState(false);
 
+  // Sync selectedCareers to URL search parameters
+  useEffect(() => {
+    if (selectedCareers.length > 0) {
+      const slugs = selectedCareers.map(c => c.slug).join(',');
+      setSearchParams({ careers: slugs }, { replace: true });
+    } else if (searchParams.has('careers')) {
+      setSearchParams({}, { replace: true });
+    }
+  }, [selectedCareers, setSearchParams]);
+
+  // Load all careers and auto-populate from URL parameter
   useEffect(() => {
     async function loadAll() {
       try {
         const res = await api.getCareers({ limit: '100' });
         setAllCareers(res.careers);
+
+        // Check if careers URL parameter exists and auto-add matching careers
+        const careersParam = searchParams.get('careers');
+        if (careersParam) {
+          const requestedSlugs = careersParam.split(',').map(s => s.trim().toLowerCase());
+          requestedSlugs.forEach(slug => {
+            const matched = res.careers.find((c: Career) => c.slug.toLowerCase() === slug || c.id === slug);
+            if (matched && !selectedCareers.some(sc => sc.id === matched.id)) {
+              addCareerToCompare(matched);
+            }
+          });
+        }
       } catch (err) {
         console.error('Failed to load career options for comparison:', err);
       }
     }
     loadAll();
   }, []);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   const handleAddCareer = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const careerId = e.target.value;
@@ -80,12 +113,33 @@ export const ComparePage: React.FC = () => {
           </div>
 
           {selectedCareers.length > 0 && (
-            <button
-              onClick={clearCompare}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-            >
-              Clear All Selected
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs"
+                title="Copy shareable link with selected careers"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Link Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-3.5 w-3.5" />
+                    <span>Share Matrix</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={clearCompare}
+                className="rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Clear All
+              </button>
+            </>
           )}
         </div>
       </div>

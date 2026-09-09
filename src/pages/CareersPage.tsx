@@ -37,6 +37,36 @@ export const CareersPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Sync state with URL search parameters on browser navigation
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlCategory = searchParams.get('category') || 'All';
+    const urlDifficulty = searchParams.get('difficulty') || 'All';
+    const urlDemandLevel = searchParams.get('demandLevel') || 'All';
+    const urlSort = searchParams.get('sort') || 'demand_desc';
+    const urlPage = parseInt(searchParams.get('page') || '1', 10);
+
+    if (urlSearch !== search) setSearch(urlSearch);
+    if (urlCategory !== category) setCategory(urlCategory);
+    if (urlDifficulty !== difficulty) setDifficulty(urlDifficulty);
+    if (urlDemandLevel !== demandLevel) setDemandLevel(urlDemandLevel);
+    if (urlSort !== sort) setSort(urlSort);
+    if (urlPage !== page) setPage(urlPage);
+  }, [searchParams]);
+
+  // Push active filter parameters to URL searchParams
+  useEffect(() => {
+    const nextParams: Record<string, string> = {};
+    if (search.trim()) nextParams.search = search.trim();
+    if (category !== 'All') nextParams.category = category;
+    if (difficulty !== 'All') nextParams.difficulty = difficulty;
+    if (demandLevel !== 'All') nextParams.demandLevel = demandLevel;
+    if (sort !== 'demand_desc') nextParams.sort = sort;
+    if (page > 1) nextParams.page = page.toString();
+
+    setSearchParams(nextParams, { replace: true });
+  }, [search, category, difficulty, demandLevel, sort, page, setSearchParams]);
+
   // Load categories
   useEffect(() => {
     async function loadCategories() {

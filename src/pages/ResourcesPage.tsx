@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Bookmark,
   Search,
@@ -15,15 +16,40 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export const ResourcesPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { savedResourceIds, toggleResourceBookmark } = useAuth();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
-  const [difficulty, setDifficulty] = useState('All');
-  const [isFree, setIsFree] = useState('All');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [category, setCategory] = useState(searchParams.get('category') || 'All');
+  const [difficulty, setDifficulty] = useState(searchParams.get('difficulty') || 'All');
+  const [isFree, setIsFree] = useState(searchParams.get('isFree') || 'All');
 
   const categories = ['All', 'Courses', 'Certifications', 'Books', 'Practice & Sandboxes', 'Documentation'];
+
+  // Sync state with URL parameter changes
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlCategory = searchParams.get('category') || 'All';
+    const urlDifficulty = searchParams.get('difficulty') || 'All';
+    const urlIsFree = searchParams.get('isFree') || 'All';
+
+    if (urlSearch !== search) setSearch(urlSearch);
+    if (urlCategory !== category) setCategory(urlCategory);
+    if (urlDifficulty !== difficulty) setDifficulty(urlDifficulty);
+    if (urlIsFree !== isFree) setIsFree(urlIsFree);
+  }, [searchParams]);
+
+  // Push active filter parameters to URL searchParams
+  useEffect(() => {
+    const nextParams: Record<string, string> = {};
+    if (search.trim()) nextParams.search = search.trim();
+    if (category !== 'All') nextParams.category = category;
+    if (difficulty !== 'All') nextParams.difficulty = difficulty;
+    if (isFree !== 'All') nextParams.isFree = isFree;
+
+    setSearchParams(nextParams, { replace: true });
+  }, [search, category, difficulty, isFree, setSearchParams]);
 
   useEffect(() => {
     async function loadResources() {

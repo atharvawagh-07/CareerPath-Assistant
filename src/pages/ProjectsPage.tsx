@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   FolderGit2,
   Search,
@@ -15,14 +16,36 @@ import { Project } from '../types';
 import { api } from '../services/api';
 
 export const ProjectsPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All');
-  const [difficulty, setDifficulty] = useState('All');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [category, setCategory] = useState(searchParams.get('category') || 'All');
+  const [difficulty, setDifficulty] = useState(searchParams.get('difficulty') || 'All');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const categories = ['All', 'AI & Machine Learning', 'Full-Stack Development', 'Cloud & DevOps', 'Cybersecurity', 'Data Engineering', 'Systems & Architecture'];
+
+  // Sync state when URL params change
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || '';
+    const urlCategory = searchParams.get('category') || 'All';
+    const urlDifficulty = searchParams.get('difficulty') || 'All';
+
+    if (urlSearch !== search) setSearch(urlSearch);
+    if (urlCategory !== category) setCategory(urlCategory);
+    if (urlDifficulty !== difficulty) setDifficulty(urlDifficulty);
+  }, [searchParams]);
+
+  // Sync active filters to URL search parameters
+  useEffect(() => {
+    const nextParams: Record<string, string> = {};
+    if (search.trim()) nextParams.search = search.trim();
+    if (category !== 'All') nextParams.category = category;
+    if (difficulty !== 'All') nextParams.difficulty = difficulty;
+
+    setSearchParams(nextParams, { replace: true });
+  }, [search, category, difficulty, setSearchParams]);
 
   useEffect(() => {
     async function loadProjects() {
