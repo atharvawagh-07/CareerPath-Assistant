@@ -1,5 +1,4 @@
 # CareerPath — Intelligent Career Orientation & Roadmaps
-
 https://careerpathassistant.ai.studio
 
 [![React](https://img.shields.io/badge/React-19.0-61dafb?logo=react&logoColor=black)](https://react.dev/)
