@@ -187,6 +187,28 @@ For instant testing, use the quick-login demo buttons in the top-right navbar, o
 
 ---
 
-## 📄 License
+👨‍💻 Developer
+Atharva Wagh
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+AI/ML & Software Development Student
+
+GitHub:
+https://github.com/atharvawagh-07
+
+📄 License
+
+This project is distributed under the MIT License.
+
+See the LICENSE file for details.
+
+⭐ Support
+
+If you find CareerPath useful or interesting:
+
+⭐ Star the repository
+🐛 Report issues
+💡 Suggest improvements
+🔀 Submit pull requests
+🚀 CareerPath Assistant
+
+Discover the right direction. Build the right skills. Become career-ready.
