@@ -210,6 +210,6 @@ If you find CareerPath useful or interesting:
 💡 Suggest improvements
 🔀 Submit pull requests
 
-##🚀 CareerPath Assistant
+## 🚀 CareerPath Assistant
 
 Discover the right direction. Build the right skills. Become career-ready.
